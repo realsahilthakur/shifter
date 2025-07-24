@@ -17,13 +17,22 @@
             color: #333;
         }
         .container {
-            max-width: 700px;
+            max-width: 750px;
             width: 100%;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             padding: 24px;
             margin-top: 20px;
+        }
+        .work-hours-container {
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         h1 {
             text-align: center;
@@ -60,6 +69,20 @@
             transition: border-color 0.3s;
         }
         .shift-input input[type="time"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .shift-input select {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 16px;
+            width: 140px;
+            background: #fff;
+            transition: border-color 0.3s;
+        }
+        .shift-input select:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -108,22 +131,26 @@
             font-weight: 600;
             margin-bottom: 12px;
         }
-        .shift-card {
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 8px 0;
-            font-size: 14px;
-            color: #374151;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
+        .shift-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12px;
         }
-        .shift-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        .shift-table th, .shift-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .shift-table th {
+            background-color: #f9fafb;
+            color: #1f2937;
+            font-weight: 600;
+        }
+        .shift-table tr:hover {
+            background-color: #f3f4f6;
+        }
+        .shift-table .actions {
+            text-align: right;
         }
         .shift-actions {
             display: flex;
@@ -189,41 +216,50 @@
             transform: translateY(-1px);
         }
         @media (max-width: 600px) {
+            .container {
+                padding: 16px;
+            }
+            .work-hours-container {
+                padding: 15px;
+            }
             .shift-input {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .shift-input input[type="time"] {
+            .shift-input input[type="time"], .shift-input select {
                 width: 100%;
             }
             .shift-input button {
                 width: 100%;
             }
-            .shift-card {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
+            .shift-table {
+                font-size: 14px;
             }
-            .shift-actions {
-                width: 100%;
-                justify-content: flex-end;
+            .shift-table th, .shift-table td {
+                padding: 8px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Work Hours Calculator</h1>
-        <div class="shift-input">
-            <label>Start Time: <input type="time" id="startTime"></label>
-            <label>End Time: <input type="time" id="endTime"></label>
-            <button id="addShiftButton" class="add-button" onclick="addOrUpdateShift()">Add Shift</button>
-            <button class="clear-button" onclick="clearAllShifts()">Clear All</button>
-            <button class="cancel-button" id="cancelEditButton" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
+        <div class="work-hours-container">
+            <h1>Work Hours Calculator</h1>
+            <div class="shift-input">
+                <label>Week: <select id="weekSelect">
+                    <option value="week1">Week 1 (Jul 20 - Jul 26, 2025)</option>
+                    <option value="week2">Week 2 (Jul 13 - Jul 19, 2025)</option>
+                </select></label>
+                <label>Start Time: <input type="time" id="startTime"></label>
+                <label>End Time: <input type="time" id="endTime"></label>
+                <button id="addShiftButton" class="add-button" onclick="addOrUpdateShift()">Add Shift</button>
+                <button class="clear-button" onclick="clearAllShifts()">Clear All</button>
+                <button class="cancel-button" id="cancelEditButton" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
+            </div>
+            <div id="week1List" class="week-section"></div>
+            <div id="week2List" class="week-section"></div>
+            <div id="combinedTotal" class="combined-total"></div>
         </div>
-        <div id="week1List" class="week-section"></div>
-        <div id="week2List" class="week-section"></div>
-        <div id="combinedTotal" class="combined-total"></div>
     </div>
 
     <script>
@@ -237,6 +273,16 @@
             return `${hours} hours ${minutes} minutes`;
         }
 
+        // Get start of the week (Sunday) from a date
+        function getStartOfWeek(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = day === 0 ? 0 : -day; // Adjust to Sunday
+            d.setDate(d.getDate() + diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
         // Load shifts from localStorage
         function loadShifts() {
             const storedShifts = localStorage.getItem('workHoursShifts');
@@ -248,14 +294,14 @@
                 shifts = shifts.filter(shift => new Date(shift.timestamp) >= twoWeeksAgo);
                 saveShifts();
             }
-            // Add the provided shift as an example
+            // Add the provided shift as an example for Week 1
             shifts.push({
                 startTime: "15:56",
                 endTime: "21:40",
                 durationHours: 5.73,
                 deduction: 0.50,
                 adjustedHours: 5.23,
-                timestamp: new Date().toISOString()
+                timestamp: getStartOfWeek(new Date()).toISOString()
             });
             saveShifts();
             updateDisplay();
@@ -266,19 +312,10 @@
             localStorage.setItem('workHoursShifts', JSON.stringify(shifts));
         }
 
-        // Get start of the week (Monday)
-        function getStartOfWeek(date) {
-            const d = new Date(date);
-            const day = d.getDay();
-            const diff = (day === 0 ? 6 : day - 1); // Adjust to Monday
-            d.setDate(d.getDate() - diff);
-            d.setHours(0, 0, 0, 0);
-            return d;
-        }
-
         function addOrUpdateShift() {
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
+            const weekSelect = document.getElementById('weekSelect').value;
 
             if (!startTime || !endTime) {
                 alert('Please enter both start and end times.');
@@ -303,6 +340,16 @@
             }
             const adjustedHours = durationHours - deduction;
 
+            const today = new Date();
+            let timestamp;
+            if (weekSelect === 'week1') {
+                timestamp = getStartOfWeek(today).toISOString();
+            } else { // week2
+                const lastWeek = new Date(today);
+                lastWeek.setDate(today.getDate() - 7);
+                timestamp = getStartOfWeek(lastWeek).toISOString();
+            }
+
             if (editingIndex >= 0) {
                 // Update existing shift
                 shifts[editingIndex] = {
@@ -318,7 +365,7 @@
                 document.getElementById('cancelEditButton').style.display = 'none';
             } else {
                 // Add new shift
-                shifts.push({ startTime, endTime, durationHours, deduction, adjustedHours, timestamp: new Date().toISOString() });
+                shifts.push({ startTime, endTime, durationHours, deduction, adjustedHours, timestamp });
             }
 
             // Save and update
@@ -395,12 +442,36 @@
             const week1List = document.getElementById('week1List');
             week1List.innerHTML = '<h3>Week 1 (Current Week)</h3>';
             if (week1Shifts.length === 0) {
-                week1List.innerHTML += '<p class="shift-card">No shifts added yet.</p>';
+                week1List.innerHTML += '<p>No shifts added yet.</p>';
             } else {
-                week1Shifts.forEach((shift, index) => {
-                    const globalIndex = shifts.indexOf(shift);
-                    week1List.innerHTML += `<p class="shift-card">Shift ${index + 1}: ${shift.startTime} - ${shift.endTime} = ${formatHoursMinutes(shift.durationHours)}, Deduction: ${formatHoursMinutes(shift.deduction)}, Adjusted: ${formatHoursMinutes(shift.adjustedHours)} <div class="shift-actions"><button class="edit-button" onclick="editShift(${globalIndex})">Edit</button><button class="delete-button" onclick="deleteShift(${globalIndex})">Delete</button></div></p>`;
-                });
+                week1List.innerHTML += `
+                    <table class="shift-table">
+                        <tr>
+                            <th>Shift #</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Deduction</th>
+                            <th>Adjusted Hours</th>
+                            <th>Actions</th>
+                        </tr>
+                        ${week1Shifts.map((shift, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${shift.startTime}</td>
+                                <td>${shift.endTime}</td>
+                                <td>${formatHoursMinutes(shift.durationHours)}</td>
+                                <td>${formatHoursMinutes(shift.deduction)}</td>
+                                <td>${formatHoursMinutes(shift.adjustedHours)}</td>
+                                <td class="actions">
+                                    <div class="shift-actions">
+                                        <button class="edit-button" onclick="editShift(${shifts.indexOf(shift)})">Edit</button>
+                                        <button class="delete-button" onclick="deleteShift(${shifts.indexOf(shift)})">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </table>`;
             }
             const week1Total = week1Shifts.reduce((sum, shift) => sum + shift.adjustedHours, 0);
             const week1Hours = Math.floor(week1Total);
@@ -412,12 +483,36 @@
             const week2List = document.getElementById('week2List');
             week2List.innerHTML = '<h3>Week 2 (Previous Week)</h3>';
             if (week2Shifts.length === 0) {
-                week2List.innerHTML += '<p class="shift-card">No shifts added yet.</p>';
+                week2List.innerHTML += '<p>No shifts added yet.</p>';
             } else {
-                week2Shifts.forEach((shift, index) => {
-                    const globalIndex = shifts.indexOf(shift);
-                    week2List.innerHTML += `<p class="shift-card">Shift ${index + 1}: ${shift.startTime} - ${shift.endTime} = ${formatHoursMinutes(shift.durationHours)}, Deduction: ${formatHoursMinutes(shift.deduction)}, Adjusted: ${formatHoursMinutes(shift.adjustedHours)} <div class="shift-actions"><button class="edit-button" onclick="editShift(${globalIndex})">Edit</button><button class="delete-button" onclick="deleteShift(${globalIndex})">Delete</button></div></p>`;
-                });
+                week2List.innerHTML += `
+                    <table class="shift-table">
+                        <tr>
+                            <th>Shift #</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Deduction</th>
+                            <th>Adjusted Hours</th>
+                            <th>Actions</th>
+                        </tr>
+                        ${week2Shifts.map((shift, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${shift.startTime}</td>
+                                <td>${shift.endTime}</td>
+                                <td>${formatHoursMinutes(shift.durationHours)}</td>
+                                <td>${formatHoursMinutes(shift.deduction)}</td>
+                                <td>${formatHoursMinutes(shift.adjustedHours)}</td>
+                                <td class="actions">
+                                    <div class="shift-actions">
+                                        <button class="edit-button" onclick="editShift(${shifts.indexOf(shift)})">Edit</button>
+                                        <button class="delete-button" onclick="deleteShift(${shifts.indexOf(shift)})">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </table>`;
             }
             const week2Total = week2Shifts.reduce((sum, shift) => sum + shift.adjustedHours, 0);
             const week2Hours = Math.floor(week2Total);
