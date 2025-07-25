@@ -25,15 +25,6 @@
             padding: 24px;
             margin-top: 20px;
         }
-        .work-hours-container {
-            max-width: 700px;
-            width: 100%;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
         h1 {
             text-align: center;
             color: #1f2937;
@@ -122,8 +113,25 @@
         .cancel-button:hover {
             background-color: #4b5563;
         }
+        .week-1-container, .week-2-container, .total-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .week-1-container {
+            border-left: 4px solid #10b981; /* Green for Week 1 */
+        }
+        .week-2-container {
+            border-left: 4px solid #3b82f6; /* Blue for Week 2 */
+        }
+        .total-container {
+            border-left: 4px solid #ef4444; /* Red for Total */
+        }
         .week-section {
-            margin-top: 24px;
+            margin-top: 0;
         }
         .week-section h3 {
             color: #1f2937;
@@ -192,11 +200,9 @@
         .combined-total {
             font-weight: 600;
             font-size: 18px;
-            color: #3b82f6;
-            margin-top: 24px;
+            color: #ef4444; /* Red to match total-container border */
+            margin-top: 12px;
             text-align: center;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 12px;
         }
         .clear-week {
             display: inline-block;
@@ -219,9 +225,6 @@
             .container {
                 padding: 16px;
             }
-            .work-hours-container {
-                padding: 15px;
-            }
             .shift-input {
                 flex-direction: column;
                 align-items: stretch;
@@ -231,6 +234,9 @@
             }
             .shift-input button {
                 width: 100%;
+            }
+            .week-1-container, .week-2-container, .total-container {
+                padding: 10px;
             }
             .shift-table {
                 font-size: 14px;
@@ -243,23 +249,21 @@
 </head>
 <body>
     <div class="container">
-        <div class="work-hours-container">
-            <h1>Work Hours Calculator</h1>
-            <div class="shift-input">
-                <label>Week: <select id="weekSelect">
-                    <option value="week1">Week 1 (Jul 20 - Jul 26, 2025)</option>
-                    <option value="week2">Week 2 (Jul 13 - Jul 19, 2025)</option>
-                </select></label>
-                <label>Start Time: <input type="time" id="startTime"></label>
-                <label>End Time: <input type="time" id="endTime"></label>
-                <button id="addShiftButton" class="add-button" onclick="addOrUpdateShift()">Add Shift</button>
-                <button class="clear-button" onclick="clearAllShifts()">Clear All</button>
-                <button class="cancel-button" id="cancelEditButton" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
-            </div>
-            <div id="week1List" class="week-section"></div>
-            <div id="week2List" class="week-section"></div>
-            <div id="combinedTotal" class="combined-total"></div>
+        <h1>Work Hours Calculator</h1>
+        <div class="shift-input">
+            <label>Week: <select id="weekSelect">
+                <option value="week1">Week 1 (Jul 20 - Jul 26, 2025)</option>
+                <option value="week2">Week 2 (Jul 13 - Jul 19, 2025)</option>
+            </select></label>
+            <label>Start Time: <input type="time" id="startTime"></label>
+            <label>End Time: <input type="time" id="endTime"></label>
+            <button id="addShiftButton" class="add-button" onclick="addOrUpdateShift()">Add Shift</button>
+            <button class="clear-button" onclick="clearAllShifts()">Clear All</button>
+            <button class="cancel-button" id="cancelEditButton" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
         </div>
+        <div class="week-1-container" id="week1List"></div>
+        <div class="week-2-container" id="week2List"></div>
+        <div class="total-container" id="combinedTotal"></div>
     </div>
 
     <script>
