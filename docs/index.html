@@ -252,8 +252,8 @@
         <h1>Work Hours Calculator</h1>
         <div class="shift-input">
             <label>Week: <select id="weekSelect">
-                <option value="week1">Week 1 (Jul 27 - Aug 2, 2025)</option>
-                <option value="week2">Week 2 (Aug 3 - Aug 9, 2025)</option>
+                <option value="week1">Week 1</option>
+                <option value="week2">Week 2</option>
             </select></label>
             <label>Start Time: <input type="time" id="startTime"></label>
             <label>End Time: <input type="time" id="endTime"></label>
@@ -277,6 +277,12 @@
             return `${hours} hours ${minutes} minutes`;
         }
 
+        // Format date to Month Day, Year (e.g., Aug 25, 2025)
+        function formatDate(date) {
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
         // Get start of the week (Sunday) from a date
         function getStartOfWeek(date) {
             const d = new Date(date);
@@ -298,16 +304,6 @@
                 shifts = shifts.filter(shift => new Date(shift.timestamp) >= twoWeeksAgo);
                 saveShifts();
             }
-            // Add the provided shift as an example for Week 1
-            shifts.push({
-                startTime: "15:56",
-                endTime: "21:40",
-                durationHours: 5.73,
-                deduction: 0.50,
-                adjustedHours: 5.23,
-                timestamp: getStartOfWeek(new Date()).toISOString()
-            });
-            saveShifts();
             updateDisplay();
         }
 
@@ -429,8 +425,16 @@
         function updateDisplay() {
             const today = new Date();
             const currentWeekStart = getStartOfWeek(today);
+            const currentWeekEnd = new Date(currentWeekStart);
+            currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
             const lastWeekStart = new Date(currentWeekStart);
             lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+            const lastWeekEnd = new Date(lastWeekStart);
+            lastWeekEnd.setDate(lastWeekEnd.getDate() + 6);
+
+            // Update select option texts with dynamic dates
+            document.querySelector('#weekSelect option[value="week1"]').textContent = `Week 1 (${formatDate(currentWeekStart)} - ${formatDate(currentWeekEnd)})`;
+            document.querySelector('#weekSelect option[value="week2"]').textContent = `Week 2 (${formatDate(lastWeekStart)} - ${formatDate(lastWeekEnd)})`;
 
             // Filter shifts for Week 1 (current week) and Week 2 (last week)
             const week1Shifts = shifts.filter(shift => {
@@ -444,7 +448,7 @@
 
             // Update Week 1 display
             const week1List = document.getElementById('week1List');
-            week1List.innerHTML = '<h3>Week 1 (Current Week)</h3>';
+            week1List.innerHTML = `<h3>Week 1 (${formatDate(currentWeekStart)} - ${formatDate(currentWeekEnd)})</h3>`;
             if (week1Shifts.length === 0) {
                 week1List.innerHTML += '<p>No shifts added yet.</p>';
             } else {
@@ -485,7 +489,7 @@
 
             // Update Week 2 display
             const week2List = document.getElementById('week2List');
-            week2List.innerHTML = '<h3>Week 2 (Previous Week)</h3>';
+            week2List.innerHTML = `<h3>Week 2 (${formatDate(lastWeekStart)} - ${formatDate(lastWeekEnd)})</h3>`;
             if (week2Shifts.length === 0) {
                 week2List.innerHTML += '<p>No shifts added yet.</p>';
             } else {
